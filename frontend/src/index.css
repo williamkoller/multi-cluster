@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f9fafb;
+  --color-border: #e5e7eb;
+  --color-border-subtle: #f0f0f3;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-accent: #6366f1;
+  --color-accent-hover: #4f46e5;
+  --color-accent-subtle: #eef2ff;
+}
+
+@layer base {
+  .dark {
+    --color-surface: #111113;
+    --color-surface-raised: #19191b;
+    --color-surface-sunken: #0c0c0d;
+    --color-border: #2e2e32;
+    --color-border-subtle: #1f1f23;
+    --color-text-primary: #ededef;
+    --color-text-secondary: #a0a0a6;
+    --color-text-muted: #6f6f78;
+    --color-accent: #818cf8;
+    --color-accent-hover: #6366f1;
+    --color-accent-subtle: rgba(99, 102, 241, 0.1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for log viewer */
+.log-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.log-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.log-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+.log-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.log-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
