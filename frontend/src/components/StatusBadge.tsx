@@ -5,25 +5,21 @@ interface StatusBadgeProps {
 export function StatusBadge({ status }: StatusBadgeProps) {
   const normalized = status.toLowerCase();
 
-  const colorMap: Record<string, string> = {
-    running:
-      'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400',
-    succeeded:
-      'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
-    pending:
-      'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400',
-    failed: 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400',
-    unknown: 'bg-gray-100 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400',
+  const dotColor: Record<string, string> = {
+    running: 'bg-[var(--color-health-green)]',
+    succeeded: 'bg-[var(--color-accent)]',
+    ready: 'bg-[var(--color-health-green)]',
+    pending: 'bg-[var(--color-health-yellow)]',
+    failed: 'bg-[var(--color-health-red)]',
+    notready: 'bg-[var(--color-health-red)]',
+    unknown: 'bg-[var(--color-health-grey)]',
   };
 
-  const classes =
-    colorMap[normalized] ??
-    'bg-gray-100 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400';
+  const dot = dotColor[normalized] ?? 'bg-[var(--color-health-grey)]';
 
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${classes}`}
-    >
+    <span className='inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]'>
+      <span className={`h-2 w-2 rounded-full ${dot}`} />
       {status}
     </span>
   );

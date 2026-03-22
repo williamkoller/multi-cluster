@@ -103,7 +103,7 @@ export function DeploymentsTable({
               ].map((h) => (
                 <th
                   key={h}
-                  className='px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]'
+                  className='px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]'
                 >
                   {h}
                 </th>
@@ -119,27 +119,27 @@ export function DeploymentsTable({
                   className='hover:bg-[var(--color-surface-sunken)] transition-colors'
                 >
                   <td
-                    className='truncate px-3 py-3 text-sm font-medium text-[var(--color-accent)]'
+                    className='truncate px-3 py-2 text-xs font-medium text-[var(--color-accent)]'
                     title={deploy.cluster}
                   >
                     {deploy.cluster}
                   </td>
                   <td
-                    className='truncate px-3 py-3 text-sm text-[var(--color-text-secondary)]'
+                    className='truncate px-3 py-2 text-xs text-[var(--color-text-secondary)]'
                     title={deploy.namespace}
                   >
                     {deploy.namespace}
                   </td>
                   <td
-                    className='truncate px-3 py-3 text-sm font-mono text-[var(--color-text-primary)]'
+                    className='truncate px-3 py-2 text-xs font-mono text-[var(--color-text-primary)]'
                     title={deploy.name}
                   >
                     {deploy.name}
                   </td>
-                  <td className='px-3 py-3 text-sm text-[var(--color-text-secondary)]'>
+                  <td className='px-3 py-2 text-xs text-[var(--color-text-secondary)]'>
                     {deploy.replicas}
                   </td>
-                  <td className='px-3 py-3 text-sm'>
+                  <td className='px-3 py-2 text-xs'>
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         deploy.available === deploy.replicas
@@ -150,10 +150,10 @@ export function DeploymentsTable({
                       {deploy.available}/{deploy.replicas}
                     </span>
                   </td>
-                  <td className='px-3 py-3 text-sm text-[var(--color-text-muted)]'>
+                  <td className='px-3 py-2 text-xs text-[var(--color-text-muted)]'>
                     {deploy.age}
                   </td>
-                  <td className='whitespace-nowrap px-3 py-3 text-sm'>
+                  <td className='whitespace-nowrap px-3 py-2 text-xs'>
                     <button
                       onClick={() => openScaleModal(deploy)}
                       disabled={scalingKey === key}

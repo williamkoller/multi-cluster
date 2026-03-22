@@ -33,6 +33,7 @@ func main() {
 
 	apiGroup.GET("/health", handler.Health)
 	apiGroup.GET("/clusters", handler.ListClusters)
+	apiGroup.GET("/summary", handler.Summary)
 	apiGroup.GET("/pods", handler.ListPodsAllClusters)
 	apiGroup.GET("/pods/:cluster", handler.ListPodsByCluster)
 	apiGroup.GET("/services", handler.ListServicesAllClusters)
@@ -58,6 +59,9 @@ func main() {
 
 	apiGroup.GET("/ingresses", handler.ListIngressesAllClusters)
 	apiGroup.GET("/ingresses/:cluster", handler.ListIngressesByCluster)
+
+	apiGroup.GET("/applications", handler.ListApplications)
+	apiGroup.GET("/applications/:cluster", handler.ListApplicationsByCluster)
 
 	addr := ":8080"
 	log.Printf("server running on %s", addr)

@@ -75,3 +75,70 @@ export interface PaginatedResponse<T> {
   pageSize: number;
   totalPages: number;
 }
+
+export interface ClusterSummary {
+  name: string;
+  status: string;
+  pods: number;
+  podsRunning: number;
+  podsPending: number;
+  podsFailed: number;
+  deployments: number;
+  deploymentsAvailable: number;
+  deploymentsUnavailable: number;
+  services: number;
+  nodes: number;
+  nodesReady: number;
+  ingresses: number;
+  namespaces: number;
+}
+
+export interface SummaryResponse {
+  clusters: ClusterSummary[];
+}
+
+export type HealthStatus =
+  | 'Healthy'
+  | 'Progressing'
+  | 'Degraded'
+  | 'Suspended'
+  | 'Missing'
+  | 'Unknown';
+
+export type SyncStatus = 'Synced' | 'OutOfSync' | 'Unknown';
+
+export interface AppResource {
+  kind: string;
+  name: string;
+  namespace: string;
+  status: string;
+  health: HealthStatus;
+}
+
+export interface TargetState {
+  replicas: number;
+}
+
+export interface LiveState {
+  availableReplicas: number;
+  readyReplicas: number;
+  unavailableReplicas: number;
+  updatedReplicas: number;
+  totalPods: number;
+  runningPods: number;
+  pendingPods: number;
+  failedPods: number;
+}
+
+export interface ApplicationInfo {
+  name: string;
+  namespace: string;
+  cluster: string;
+  health: HealthStatus;
+  syncStatus: SyncStatus;
+  source: string;
+  targetState: TargetState;
+  liveState: LiveState;
+  resources: AppResource[];
+  age: string;
+}

@@ -57,7 +57,7 @@ export function ServicesTable({ services, loading }: ServicesTableProps) {
             ].map((h) => (
               <th
                 key={h}
-                className='px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]'
+                className='px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]'
               >
                 {h}
               </th>
@@ -75,7 +75,7 @@ export function ServicesTable({ services, loading }: ServicesTableProps) {
                   className='hover:bg-[var(--color-surface-sunken)] transition-colors cursor-pointer'
                   onClick={() => toggleRow(key)}
                 >
-                  <td className='px-3 py-3 text-sm text-[var(--color-text-muted)]'>
+                  <td className='px-3 py-2 text-xs text-[var(--color-text-muted)]'>
                     {svc.pods.length > 0 && (
                       <span
                         className={`inline-block transition-transform ${isExpanded ? 'rotate-90' : ''}`}
@@ -85,39 +85,39 @@ export function ServicesTable({ services, loading }: ServicesTableProps) {
                     )}
                   </td>
                   <td
-                    className='truncate px-3 py-3 text-sm font-medium text-[var(--color-accent)]'
+                    className='truncate px-3 py-2 text-xs font-medium text-[var(--color-accent)]'
                     title={svc.cluster}
                   >
                     {svc.cluster}
                   </td>
                   <td
-                    className='truncate px-3 py-3 text-sm text-[var(--color-text-secondary)]'
+                    className='truncate px-3 py-2 text-xs text-[var(--color-text-secondary)]'
                     title={svc.namespace}
                   >
                     {svc.namespace}
                   </td>
                   <td
-                    className='truncate px-3 py-3 text-sm font-mono text-[var(--color-text-primary)]'
+                    className='truncate px-3 py-2 text-xs font-mono text-[var(--color-text-primary)]'
                     title={svc.name}
                   >
                     {svc.name}
                   </td>
-                  <td className='truncate px-3 py-3 text-sm text-[var(--color-text-secondary)]'>
+                  <td className='truncate px-3 py-2 text-xs text-[var(--color-text-secondary)]'>
                     {svc.type}
                   </td>
                   <td
-                    className='truncate px-3 py-3 text-sm font-mono text-[var(--color-text-secondary)]'
+                    className='truncate px-3 py-2 text-xs font-mono text-[var(--color-text-secondary)]'
                     title={svc.clusterIp}
                   >
                     {svc.clusterIp}
                   </td>
                   <td
-                    className='truncate px-3 py-3 text-sm font-mono text-[var(--color-text-secondary)]'
+                    className='truncate px-3 py-2 text-xs font-mono text-[var(--color-text-secondary)]'
                     title={svc.ports}
                   >
                     {svc.ports}
                   </td>
-                  <td className='truncate px-3 py-3 text-sm text-[var(--color-text-muted)]'>
+                  <td className='truncate px-3 py-2 text-xs text-[var(--color-text-muted)]'>
                     {svc.age}
                   </td>
                 </tr>

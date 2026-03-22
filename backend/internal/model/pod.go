@@ -68,6 +68,85 @@ type IngressInfo struct {
 	Age       string   `json:"age"`
 }
 
+type ClusterSummary struct {
+	Name                   string `json:"name"`
+	Status                 string `json:"status"`
+	Pods                   int    `json:"pods"`
+	PodsRunning            int    `json:"podsRunning"`
+	PodsPending            int    `json:"podsPending"`
+	PodsFailed             int    `json:"podsFailed"`
+	Deployments            int    `json:"deployments"`
+	DeploymentsAvailable   int    `json:"deploymentsAvailable"`
+	DeploymentsUnavailable int    `json:"deploymentsUnavailable"`
+	Services               int    `json:"services"`
+	Nodes                  int    `json:"nodes"`
+	NodesReady             int    `json:"nodesReady"`
+	Ingresses              int    `json:"ingresses"`
+	Namespaces             int    `json:"namespaces"`
+}
+
+type SummaryResponse struct {
+	Clusters []ClusterSummary `json:"clusters"`
+}
+
+// ArgoCD-style Application model.
+// Each Deployment is treated as an Application with Health, Sync, and resource tree.
+
+type HealthStatus string
+
+const (
+	HealthHealthy     HealthStatus = "Healthy"
+	HealthProgressing HealthStatus = "Progressing"
+	HealthDegraded    HealthStatus = "Degraded"
+	HealthSuspended   HealthStatus = "Suspended"
+	HealthMissing     HealthStatus = "Missing"
+	HealthUnknown     HealthStatus = "Unknown"
+)
+
+type SyncStatus string
+
+const (
+	SyncSynced    SyncStatus = "Synced"
+	SyncOutOfSync SyncStatus = "OutOfSync"
+	SyncUnknown   SyncStatus = "Unknown"
+)
+
+type AppResource struct {
+	Kind      string       `json:"kind"`
+	Name      string       `json:"name"`
+	Namespace string       `json:"namespace"`
+	Status    string       `json:"status"`
+	Health    HealthStatus `json:"health"`
+}
+
+type ApplicationInfo struct {
+	Name        string        `json:"name"`
+	Namespace   string        `json:"namespace"`
+	Cluster     string        `json:"cluster"`
+	Health      HealthStatus  `json:"health"`
+	SyncStatus  SyncStatus    `json:"syncStatus"`
+	Source      string        `json:"source"`
+	TargetState TargetState   `json:"targetState"`
+	LiveState   LiveState     `json:"liveState"`
+	Resources   []AppResource `json:"resources"`
+	Age         string        `json:"age"`
+}
+
+type TargetState struct {
+	Replicas int32 `json:"replicas"`
+}
+
+type LiveState struct {
+	AvailableReplicas   int32 `json:"availableReplicas"`
+	ReadyReplicas       int32 `json:"readyReplicas"`
+	UnavailableReplicas int32 `json:"unavailableReplicas"`
+	UpdatedReplicas     int32 `json:"updatedReplicas"`
+	TotalPods           int   `json:"totalPods"`
+	RunningPods         int   `json:"runningPods"`
+	PendingPods         int   `json:"pendingPods"`
+	FailedPods          int   `json:"failedPods"`
+}
+
 type PaginatedResponse[T any] struct {
 	Items      []T `json:"items"`
 	Total      int `json:"total"`

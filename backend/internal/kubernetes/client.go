@@ -708,3 +708,278 @@ func (m *MultiClusterManager) ListIngressesFromAllClusters(ctx context.Context, 
 	}
 	return all, nil
 }
+
+func (m *MultiClusterManager) GetSummary(ctx context.Context) ([]model.ClusterSummary, error) {
+	clusters := m.ListClusters()
+	summaries := make([]model.ClusterSummary, len(clusters))
+	errs := make([]error, len(clusters))
+	var wg sync.WaitGroup
+
+	for i, cluster := range clusters {
+		wg.Add(1)
+		go func(i int, cluster string) {
+			defer wg.Done()
+			client := m.clients[cluster]
+			s := model.ClusterSummary{Name: cluster, Status: "Connected"}
+
+			podList, err := client.CoreV1().Pods("").List(ctx, metav1.ListOptions{})
+			if err != nil {
+				s.Status = "Error"
+				errs[i] = nil // non-fatal: still return partial summary
+				summaries[i] = s
+				return
+			}
+			s.Pods = len(podList.Items)
+			for _, p := range podList.Items {
+				switch p.Status.Phase {
+				case v1.PodRunning:
+					s.PodsRunning++
+				case v1.PodPending:
+					s.PodsPending++
+				case v1.PodFailed:
+					s.PodsFailed++
+				}
+			}
+
+			deploys, err := client.AppsV1().Deployments("").List(ctx, metav1.ListOptions{})
+			if err == nil {
+				s.Deployments = len(deploys.Items)
+				for _, d := range deploys.Items {
+					var desired int32
+					if d.Spec.Replicas != nil {
+						desired = *d.Spec.Replicas
+					}
+					if d.Status.AvailableReplicas >= desired && desired > 0 {
+						s.DeploymentsAvailable++
+					} else if desired > 0 {
+						s.DeploymentsUnavailable++
+					}
+				}
+			}
+
+			svcList, err := client.CoreV1().Services("").List(ctx, metav1.ListOptions{})
+			if err == nil {
+				s.Services = len(svcList.Items)
+			}
+
+			nodeList, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			if err == nil {
+				s.Nodes = len(nodeList.Items)
+				for _, n := range nodeList.Items {
+					for _, cond := range n.Status.Conditions {
+						if cond.Type == v1.NodeReady && cond.Status == v1.ConditionTrue {
+							s.NodesReady++
+							break
+						}
+					}
+				}
+			}
+
+			ingList, err := client.NetworkingV1().Ingresses("").List(ctx, metav1.ListOptions{})
+			if err == nil {
+				s.Ingresses = len(ingList.Items)
+			}
+
+			nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+			if err == nil {
+				s.Namespaces = len(nsList.Items)
+			}
+
+			summaries[i] = s
+		}(i, cluster)
+	}
+	wg.Wait()
+
+	for _, err := range errs {
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return summaries, nil
+}
+
+func (m *MultiClusterManager) GetApplicationsFromCluster(ctx context.Context, cluster, namespace string) ([]model.ApplicationInfo, error) {
+	client, ok := m.clients[cluster]
+	if !ok {
+		return nil, fmt.Errorf("cluster %q not found", cluster)
+	}
+
+	deploys, err := client.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list deployments in cluster %s: %w", cluster, err)
+	}
+
+	apps := make([]model.ApplicationInfo, 0, len(deploys.Items))
+
+	for _, d := range deploys.Items {
+		var desiredReplicas int32
+		if d.Spec.Replicas != nil {
+			desiredReplicas = *d.Spec.Replicas
+		}
+
+		// Query pods owned by this deployment via label selector
+		selector := labels.Set(d.Spec.Selector.MatchLabels).String()
+		podList, err := client.CoreV1().Pods(d.Namespace).List(ctx, metav1.ListOptions{
+			LabelSelector: selector,
+		})
+
+		var liveState model.LiveState
+		var resources []model.AppResource
+
+		if err == nil {
+			liveState.TotalPods = len(podList.Items)
+			for _, p := range podList.Items {
+				podHealth := model.HealthUnknown
+				switch p.Status.Phase {
+				case v1.PodRunning:
+					liveState.RunningPods++
+					podHealth = model.HealthHealthy
+				case v1.PodPending:
+					liveState.PendingPods++
+					podHealth = model.HealthProgressing
+				case v1.PodFailed:
+					liveState.FailedPods++
+					podHealth = model.HealthDegraded
+				}
+				resources = append(resources, model.AppResource{
+					Kind:      "Pod",
+					Name:      p.Name,
+					Namespace: p.Namespace,
+					Status:    string(p.Status.Phase),
+					Health:    podHealth,
+				})
+			}
+		}
+
+		liveState.AvailableReplicas = d.Status.AvailableReplicas
+		liveState.ReadyReplicas = d.Status.ReadyReplicas
+		liveState.UnavailableReplicas = d.Status.UnavailableReplicas
+		liveState.UpdatedReplicas = d.Status.UpdatedReplicas
+
+		// Add the deployment itself as a resource
+		deployHealth := computeDeployHealth(desiredReplicas, d.Status.AvailableReplicas, d.Status.UnavailableReplicas)
+		resources = append([]model.AppResource{{
+			Kind:      "Deployment",
+			Name:      d.Name,
+			Namespace: d.Namespace,
+			Status:    fmt.Sprintf("%d/%d", d.Status.AvailableReplicas, desiredReplicas),
+			Health:    deployHealth,
+		}}, resources...)
+
+		// Query services that select the same labels
+		svcList, svcErr := client.CoreV1().Services(d.Namespace).List(ctx, metav1.ListOptions{})
+		if svcErr == nil {
+			for _, svc := range svcList.Items {
+				if len(svc.Spec.Selector) == 0 {
+					continue
+				}
+				match := true
+				for k, v := range svc.Spec.Selector {
+					if d.Spec.Selector.MatchLabels[k] != v {
+						match = false
+						break
+					}
+				}
+				if match {
+					resources = append(resources, model.AppResource{
+						Kind:      "Service",
+						Name:      svc.Name,
+						Namespace: svc.Namespace,
+						Status:    string(svc.Spec.Type),
+						Health:    model.HealthHealthy,
+					})
+				}
+			}
+		}
+
+		// Compute overall health
+		health := computeDeployHealth(desiredReplicas, d.Status.AvailableReplicas, d.Status.UnavailableReplicas)
+
+		// Compute sync status (target vs live)
+		syncStatus := model.SyncSynced
+		if desiredReplicas > 0 && d.Status.UpdatedReplicas != desiredReplicas {
+			syncStatus = model.SyncOutOfSync
+		} else if desiredReplicas > 0 && d.Status.AvailableReplicas != desiredReplicas {
+			syncStatus = model.SyncOutOfSync
+		} else if desiredReplicas == 0 && d.Status.Replicas > 0 {
+			syncStatus = model.SyncOutOfSync
+		}
+
+		apps = append(apps, model.ApplicationInfo{
+			Name:       d.Name,
+			Namespace:  d.Namespace,
+			Cluster:    cluster,
+			Health:     health,
+			SyncStatus: syncStatus,
+			Source:     "Deployment",
+			TargetState: model.TargetState{
+				Replicas: desiredReplicas,
+			},
+			LiveState: liveState,
+			Resources: resources,
+			Age:       translateTimestampSince(d.CreationTimestamp.Time),
+		})
+	}
+
+	sort.Slice(apps, func(i, j int) bool {
+		if apps[i].Namespace == apps[j].Namespace {
+			return apps[i].Name < apps[j].Name
+		}
+		return apps[i].Namespace < apps[j].Namespace
+	})
+
+	return apps, nil
+}
+
+func computeDeployHealth(desired, available, unavailable int32) model.HealthStatus {
+	if desired == 0 {
+		return model.HealthSuspended
+	}
+	if unavailable > 0 {
+		if available == 0 {
+			return model.HealthDegraded
+		}
+		return model.HealthProgressing
+	}
+	if available >= desired {
+		return model.HealthHealthy
+	}
+	return model.HealthProgressing
+}
+
+func (m *MultiClusterManager) GetApplicationsFromAllClusters(ctx context.Context, namespace string) ([]model.ApplicationInfo, error) {
+	clusters := m.ListClusters()
+	results := make([][]model.ApplicationInfo, len(clusters))
+	errs := make([]error, len(clusters))
+	var wg sync.WaitGroup
+
+	for i, cluster := range clusters {
+		wg.Add(1)
+		go func(i int, cluster string) {
+			defer wg.Done()
+			results[i], errs[i] = m.GetApplicationsFromCluster(ctx, cluster, namespace)
+		}(i, cluster)
+	}
+	wg.Wait()
+
+	all := make([]model.ApplicationInfo, 0)
+	for i := range clusters {
+		if errs[i] != nil {
+			return nil, errs[i]
+		}
+		all = append(all, results[i]...)
+	}
+
+	sort.Slice(all, func(i, j int) bool {
+		if all[i].Cluster == all[j].Cluster {
+			if all[i].Namespace == all[j].Namespace {
+				return all[i].Name < all[j].Name
+			}
+			return all[i].Namespace < all[j].Namespace
+		}
+		return all[i].Cluster < all[j].Cluster
+	})
+
+	return all, nil
+}

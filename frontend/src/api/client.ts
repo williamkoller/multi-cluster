@@ -1,4 +1,5 @@
 import type {
+  ApplicationInfo,
   DeploymentInfo,
   EventInfo,
   IngressInfo,
@@ -6,6 +7,7 @@ import type {
   PaginatedResponse,
   PodInfo,
   ServiceInfo,
+  SummaryResponse,
 } from '../types';
 
 const BASE_URL = '/api';
@@ -209,4 +211,30 @@ export function streamPodLogsURL(
   tail = 100,
 ): string {
   return `${BASE_URL}/pods/${encodeURIComponent(cluster)}/${encodeURIComponent(namespace)}/${encodeURIComponent(pod)}/logs/stream?tail=${tail}`;
+}
+
+export async function getSummary(): Promise<SummaryResponse> {
+  return fetchJSON<SummaryResponse>(`${BASE_URL}/summary`);
+}
+
+export async function getApplications(
+  cluster?: string,
+  namespace?: string,
+  page = 1,
+  pageSize = 50,
+): Promise<PaginatedResponse<ApplicationInfo>> {
+  const params = new URLSearchParams();
+  if (namespace) params.set('namespace', namespace);
+  params.set('page', String(page));
+  params.set('pageSize', String(pageSize));
+  const query = `?${params}`;
+
+  if (cluster) {
+    return fetchJSON<PaginatedResponse<ApplicationInfo>>(
+      `${BASE_URL}/applications/${encodeURIComponent(cluster)}${query}`,
+    );
+  }
+  return fetchJSON<PaginatedResponse<ApplicationInfo>>(
+    `${BASE_URL}/applications${query}`,
+  );
 }

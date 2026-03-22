@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import {
   getClusters,
+  getApplications,
   getDeployments,
   getEvents,
   getIngresses,
@@ -9,15 +10,18 @@ import {
   getNodes,
   getPods,
   getServices,
+  getSummary,
   restartPod,
   rolloutRestartDeployment,
   scaleDeployment,
 } from './api/client';
+import { ApplicationCards } from './components/ApplicationCard';
 import { ClusterSelector } from './components/ClusterSelector';
 import { DeploymentsTable } from './components/DeploymentsTable';
 import { EventsTable } from './components/EventsTable';
 import { IngressesTable } from './components/IngressesTable';
 import { NodesTable } from './components/NodesTable';
+import { OverviewCards } from './components/OverviewCards';
 import { Pagination } from './components/Pagination';
 import { PodLogsViewer } from './components/PodLogsViewer';
 import { PodsTable } from './components/PodsTable';
@@ -26,6 +30,8 @@ import { ServicesTable } from './components/ServicesTable';
 import { ToastContainer } from './components/ToastContainer';
 import { useToast } from './hooks/useToast';
 import type {
+  ApplicationInfo,
+  ClusterSummary,
   DeploymentInfo,
   EventInfo,
   IngressInfo,
@@ -36,6 +42,8 @@ import type {
 } from './types';
 
 type Tab =
+  | 'overview'
+  | 'applications'
   | 'pods'
   | 'services'
   | 'deployments'
@@ -44,6 +52,8 @@ type Tab =
   | 'ingresses';
 
 const TABS: { key: Tab; label: string }[] = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'applications', label: 'Applications' },
   { key: 'pods', label: 'Pods' },
   { key: 'services', label: 'Services' },
   { key: 'deployments', label: 'Deployments' },
@@ -68,11 +78,15 @@ function exportCSV(headers: string[], rows: string[][], filename: string) {
 }
 
 function App() {
-  const [tab, setTab] = useState<Tab>('pods');
+  const [tab, setTab] = useState<Tab>('overview');
   const [clusters, setClusters] = useState<string[]>([]);
   const [selectedCluster, setSelectedCluster] = useState('');
   const [namespace, setNamespace] = useState('');
   const [allNamespaces, setAllNamespaces] = useState<string[]>([]);
+  const [summary, setSummary] = useState<ClusterSummary[]>([]);
+  const [applications, setApplications] = useState<
+    PaginatedResponse<ApplicationInfo>
+  >({ items: [], total: 0, page: 1, pageSize: 50, totalPages: 1 });
   const [pods, setPods] = useState<PaginatedResponse<PodInfo>>({
     items: [],
     total: 0,
@@ -159,7 +173,13 @@ function App() {
     try {
       const cluster = selectedCluster || undefined;
       const ns = namespace || undefined;
-      if (tab === 'pods') setPods(await getPods(cluster, ns, page, pageSize));
+      if (tab === 'overview') {
+        const resp = await getSummary();
+        setSummary(resp.clusters);
+      } else if (tab === 'applications')
+        setApplications(await getApplications(cluster, ns, page, pageSize));
+      else if (tab === 'pods')
+        setPods(await getPods(cluster, ns, page, pageSize));
       else if (tab === 'services')
         setServices(await getServices(cluster, ns, page, pageSize));
       else if (tab === 'deployments')
@@ -243,6 +263,8 @@ function App() {
   // Get current paginated response for active tab
   const currentPagination = () => {
     switch (tab) {
+      case 'applications':
+        return applications;
       case 'pods':
         return pods;
       case 'services':
@@ -260,6 +282,13 @@ function App() {
 
   // Search filtering (client-side on current page)
   const q = search.toLowerCase();
+  const filteredApps = q
+    ? applications.items.filter((a) =>
+        `${a.cluster} ${a.namespace} ${a.name} ${a.health} ${a.syncStatus}`
+          .toLowerCase()
+          .includes(q),
+      )
+    : applications.items;
   const filteredPods = q
     ? pods.items.filter((p) =>
         `${p.cluster} ${p.namespace} ${p.name} ${p.status}`
@@ -302,7 +331,33 @@ function App() {
     : ingresses.items;
 
   const handleExport = () => {
-    if (tab === 'pods') {
+    if (tab === 'applications') {
+      exportCSV(
+        [
+          'Cluster',
+          'Namespace',
+          'Name',
+          'Health',
+          'Sync',
+          'Source',
+          'Replicas',
+          'Available',
+          'Age',
+        ],
+        filteredApps.map((a) => [
+          a.cluster,
+          a.namespace,
+          a.name,
+          a.health,
+          a.syncStatus,
+          a.source,
+          String(a.targetState.replicas),
+          String(a.liveState.availableReplicas),
+          a.age,
+        ]),
+        'applications.csv',
+      );
+    } else if (tab === 'pods') {
       exportCSV(
         ['Cluster', 'Namespace', 'Name', 'Ready', 'Status', 'Age'],
         filteredPods.map((p) => [
@@ -419,15 +474,32 @@ function App() {
   return (
     <div className='min-h-screen bg-[var(--color-surface-sunken)] text-[var(--color-text-primary)] transition-colors'>
       <header className='border-b border-[var(--color-border)] bg-[var(--color-surface)]'>
-        <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+        <div className='mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8'>
           <div className='flex h-14 items-center justify-between'>
             <div className='flex items-center gap-3'>
-              <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent)] text-white text-[10px] font-bold'>
-                K8s
+              <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent)] text-white'>
+                <svg
+                  className='h-4 w-4'
+                  fill='none'
+                  viewBox='0 0 24 24'
+                  strokeWidth='2'
+                  stroke='currentColor'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    d='M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9'
+                  />
+                </svg>
               </div>
-              <h1 className='text-sm font-semibold text-[var(--color-text-primary)]'>
-                Multi-Cluster Dashboard
-              </h1>
+              <div>
+                <h1 className='text-sm font-semibold text-[var(--color-text-primary)] leading-tight'>
+                  Multi-Cluster
+                </h1>
+                <p className='text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]'>
+                  Dashboard
+                </p>
+              </div>
             </div>
             <div className='flex items-center gap-2'>
               <ClusterSelector
@@ -540,74 +612,53 @@ function App() {
         </div>
       </header>
 
-      <main className='mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8'>
-        {/* Stats cards */}
-        <div className='mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6'>
-          {[
-            { label: 'Clusters', value: clusters.length },
-            { label: 'Pods', value: pods.total },
-            { label: 'Services', value: services.total },
-            { label: 'Deployments', value: deployments.total },
-            { label: 'Nodes', value: nodes.total },
-            { label: 'Events', value: events.total },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className='rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] p-4'
-            >
-              <p className='text-xs text-[var(--color-text-muted)]'>
-                {stat.label}
-              </p>
-              <p className='mt-1 text-2xl font-semibold text-[var(--color-text-primary)] tabular-nums'>
-                {stat.value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Search + Export */}
-        <div className='mb-4 flex items-center gap-2'>
-          <div className='flex-1'>
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder={`Search ${tab}...`}
-            />
-          </div>
-          <button
-            onClick={handleExport}
-            className='inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'
-          >
-            <svg
-              className='h-4 w-4'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth='2'
-              stroke='currentColor'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
-              />
-            </svg>
-            Export CSV
-          </button>
-        </div>
-
+      <main className='mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8'>
         {/* Tabs */}
         <Tabs.Root value={tab} onValueChange={(v) => setTab(v as Tab)}>
-          <Tabs.List className='flex border-b border-[var(--color-border)]'>
-            {TABS.map((t) => (
-              <Tabs.Trigger
-                key={t.key}
-                value={t.key}
-                className='px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border)] data-[state=active]:border-[var(--color-accent)] data-[state=active]:text-[var(--color-accent)] outline-none'
-              >
-                {t.label}
-              </Tabs.Trigger>
-            ))}
-          </Tabs.List>
+          <div className='flex items-center justify-between mb-6'>
+            <Tabs.List className='flex gap-1 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] p-1'>
+              {TABS.map((t) => (
+                <Tabs.Trigger
+                  key={t.key}
+                  value={t.key}
+                  className='px-3.5 py-1.5 text-xs font-medium uppercase tracking-wider rounded-md transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] data-[state=active]:bg-[var(--color-accent)] data-[state=active]:text-white outline-none'
+                >
+                  {t.label}
+                </Tabs.Trigger>
+              ))}
+            </Tabs.List>
+
+            {tab !== 'overview' && tab !== 'applications' && (
+              <div className='flex items-center gap-2'>
+                <div className='w-56'>
+                  <SearchBar
+                    value={search}
+                    onChange={setSearch}
+                    placeholder={`Search ${tab}...`}
+                  />
+                </div>
+                <button
+                  onClick={handleExport}
+                  className='inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'
+                >
+                  <svg
+                    className='h-3.5 w-3.5'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    strokeWidth='2'
+                    stroke='currentColor'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
+                    />
+                  </svg>
+                  CSV
+                </button>
+              </div>
+            )}
+          </div>
 
           {error && (
             <div className='mt-4 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-3 text-sm text-red-600 dark:text-red-400 flex items-center gap-2'>
@@ -627,6 +678,28 @@ function App() {
           )}
 
           <div className='mt-4'>
+            <Tabs.Content
+              value='overview'
+              forceMount
+              className={tab !== 'overview' ? 'hidden' : ''}
+            >
+              <OverviewCards clusters={summary} loading={loading} />
+            </Tabs.Content>
+            <Tabs.Content
+              value='applications'
+              forceMount
+              className={tab !== 'applications' ? 'hidden' : ''}
+            >
+              <ApplicationCards
+                apps={filteredApps}
+                loading={loading}
+                onSync={handleRolloutRestart}
+                onScale={handleScale}
+                onRefresh={fetchData}
+                onDeletePod={handleRestart}
+                onViewLogs={handleViewLogs}
+              />
+            </Tabs.Content>
             <Tabs.Content
               value='pods'
               forceMount
@@ -679,17 +752,19 @@ function App() {
             >
               <IngressesTable ingresses={filteredIngresses} loading={loading} />
             </Tabs.Content>
-            <Pagination
-              page={pag.page}
-              totalPages={pag.totalPages}
-              total={pag.total}
-              pageSize={pag.pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setPage(1);
-              }}
-            />
+            {tab !== 'overview' && tab !== 'applications' && (
+              <Pagination
+                page={pag?.page || 1}
+                totalPages={pag?.totalPages || 1}
+                total={pag?.total || 0}
+                pageSize={pag?.pageSize || 50}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
+              />
+            )}
           </div>
         </Tabs.Root>
       </main>

@@ -480,3 +480,63 @@ func (h *Handler) ListIngressesByCluster(c *gin.Context) {
 
 	c.JSON(http.StatusOK, model.Paginate(ingresses, page, pageSize))
 }
+
+func (h *Handler) Summary(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+
+	key := cacheKey("summary", "all")
+	if v, ok := h.cache.Get(key); ok {
+		c.JSON(http.StatusOK, v)
+		return
+	}
+
+	summaries, err := h.manager.GetSummary(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	resp := model.SummaryResponse{Clusters: summaries}
+	h.cache.Set(key, resp)
+	c.JSON(http.StatusOK, resp)
+}
+
+func (h *Handler) ListApplications(c *gin.Context) {
+	namespace := c.Query("namespace")
+	page, pageSize := parsePagination(c)
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+
+	key := cacheKey("applications", "all", namespace)
+	apps, err := cachedList(h, ctx, key, func() ([]model.ApplicationInfo, error) {
+		return h.manager.GetApplicationsFromAllClusters(ctx, namespace)
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, model.Paginate(apps, page, pageSize))
+}
+
+func (h *Handler) ListApplicationsByCluster(c *gin.Context) {
+	cluster := c.Param("cluster")
+	namespace := c.Query("namespace")
+	page, pageSize := parsePagination(c)
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+
+	key := cacheKey("applications", cluster, namespace)
+	apps, err := cachedList(h, ctx, key, func() ([]model.ApplicationInfo, error) {
+		return h.manager.GetApplicationsFromCluster(ctx, cluster, namespace)
+	})
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, model.Paginate(apps, page, pageSize))
+}

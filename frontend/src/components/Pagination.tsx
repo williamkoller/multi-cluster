@@ -22,16 +22,24 @@ export function Pagination({
 
   return (
     <div className='mt-4 flex items-center justify-between'>
-      <p className='text-sm text-[var(--color-text-secondary)]'>
-        Showing <span className='font-medium'>{start}</span> to{' '}
-        <span className='font-medium'>{end}</span> of{' '}
-        <span className='font-medium'>{total}</span> results
+      <p className='text-xs text-[var(--color-text-muted)]'>
+        <span className='font-medium text-[var(--color-text-secondary)]'>
+          {start}
+        </span>
+        –
+        <span className='font-medium text-[var(--color-text-secondary)]'>
+          {end}
+        </span>{' '}
+        of{' '}
+        <span className='font-medium text-[var(--color-text-secondary)]'>
+          {total}
+        </span>
       </p>
       <div className='flex items-center gap-3'>
         <select
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className='rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] focus:outline-none transition-colors'
+          className='rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] focus:outline-none transition-colors'
         >
           {[25, 50, 100, 200].map((s) => (
             <option key={s} value={s}>

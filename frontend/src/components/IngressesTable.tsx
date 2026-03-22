@@ -39,7 +39,7 @@ export function IngressesTable({ ingresses, loading }: IngressesTableProps) {
               (h) => (
                 <th
                   key={h}
-                  className='px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]'
+                  className='px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]'
                 >
                   {h}
                 </th>
@@ -54,36 +54,36 @@ export function IngressesTable({ ingresses, loading }: IngressesTableProps) {
               className='hover:bg-[var(--color-surface-sunken)] transition-colors'
             >
               <td
-                className='truncate px-3 py-3 text-sm font-medium text-[var(--color-accent)]'
+                className='truncate px-3 py-2 text-xs font-medium text-[var(--color-accent)]'
                 title={ing.cluster}
               >
                 {ing.cluster}
               </td>
               <td
-                className='truncate px-3 py-3 text-sm text-[var(--color-text-secondary)]'
+                className='truncate px-3 py-2 text-xs text-[var(--color-text-secondary)]'
                 title={ing.namespace}
               >
                 {ing.namespace}
               </td>
               <td
-                className='truncate px-3 py-3 text-sm font-mono text-[var(--color-text-primary)]'
+                className='truncate px-3 py-2 text-xs font-mono text-[var(--color-text-primary)]'
                 title={ing.name}
               >
                 {ing.name}
               </td>
               <td
-                className='truncate px-3 py-3 text-sm text-[var(--color-text-secondary)]'
+                className='truncate px-3 py-2 text-xs text-[var(--color-text-secondary)]'
                 title={ing.hosts.join(', ') || '-'}
               >
                 {ing.hosts.join(', ') || '-'}
               </td>
               <td
-                className='truncate px-3 py-3 text-sm font-mono text-[var(--color-text-secondary)]'
+                className='truncate px-3 py-2 text-xs font-mono text-[var(--color-text-secondary)]'
                 title={ing.paths || '-'}
               >
                 {ing.paths || '-'}
               </td>
-              <td className='truncate px-3 py-3 text-sm text-[var(--color-text-muted)]'>
+              <td className='truncate px-3 py-2 text-xs text-[var(--color-text-muted)]'>
                 {ing.age}
               </td>
             </tr>

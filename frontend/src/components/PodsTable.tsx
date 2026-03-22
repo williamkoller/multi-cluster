@@ -68,7 +68,7 @@ export function PodsTable({
             ].map((h) => (
               <th
                 key={h}
-                className='px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]'
+                className='px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]'
               >
                 {h}
               </th>
@@ -82,30 +82,30 @@ export function PodsTable({
               className='hover:bg-[var(--color-surface-sunken)] transition-colors'
             >
               <td
-                className='truncate px-3 py-3 text-sm font-medium text-[var(--color-accent)]'
+                className='truncate px-3 py-2 text-xs font-medium text-[var(--color-accent)]'
                 title={pod.cluster}
               >
                 {pod.cluster}
               </td>
               <td
-                className='truncate px-3 py-3 text-sm text-[var(--color-text-secondary)]'
+                className='truncate px-3 py-2 text-xs text-[var(--color-text-secondary)]'
                 title={pod.namespace}
               >
                 {pod.namespace}
               </td>
               <td
-                className='truncate px-3 py-3 text-sm font-mono text-[var(--color-text-primary)]'
+                className='truncate px-3 py-2 text-xs font-mono text-[var(--color-text-primary)]'
                 title={pod.name}
               >
                 {pod.name}
               </td>
-              <td className='px-3 py-3 text-sm text-[var(--color-text-secondary)]'>
+              <td className='px-3 py-2 text-xs tabular-nums text-[var(--color-text-secondary)]'>
                 {pod.ready}
               </td>
-              <td className='px-3 py-3 text-sm'>
+              <td className='px-3 py-2 text-xs'>
                 <StatusBadge status={pod.status} />
               </td>
-              <td className='px-3 py-3 text-sm text-[var(--color-text-muted)]'>
+              <td className='px-3 py-2 text-xs text-[var(--color-text-muted)]'>
                 {pod.age}
               </td>
               <td className='whitespace-nowrap px-3 py-3 text-sm'>
