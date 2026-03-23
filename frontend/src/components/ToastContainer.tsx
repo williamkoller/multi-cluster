@@ -32,8 +32,8 @@ function ToastItem({
     <div
       className={`flex items-center gap-2 rounded-lg border bg-[var(--color-surface)] px-4 py-3 text-sm font-medium transition-all animate-[slideIn_0.2s_ease-out] ${
         toast.type === 'success'
-          ? 'border-green-200 dark:border-green-800/50 text-green-700 dark:text-green-400'
-          : 'border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400'
+          ? 'border-[var(--color-status-success-border)] text-[var(--color-status-success-text)]'
+          : 'border-[var(--color-status-danger-border)] text-[var(--color-status-danger-text)]'
       }`}
     >
       <div

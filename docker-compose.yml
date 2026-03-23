@@ -1,18 +1,44 @@
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      - KUBECONFIG=/app/.kube/config
+      - REDIS_ADDR=redis:6379
+      - GIN_MODE=${GIN_MODE:-release}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ${KUBECONFIG:-~/.kube/config}:/root/.kube/config:ro
+      - ${KUBECONFIG:-${HOME}/.kube/config}:/tmp/.kube/config:ro
+    depends_on:
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
     ports:
-      - "3000:80"
+      - "${FRONTEND_PORT:-3000}:8080"
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  redis-data:

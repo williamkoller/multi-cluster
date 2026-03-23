@@ -78,8 +78,8 @@ export function EventsTable({ events, loading }: EventsTableProps) {
                 <span
                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                     ev.type === 'Normal'
-                      ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400'
-                      : 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400'
+                      ? 'bg-[var(--color-status-info-bg)] text-[var(--color-status-info-text)]'
+                      : 'bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning-text)]'
                   }`}
                 >
                   {ev.type}

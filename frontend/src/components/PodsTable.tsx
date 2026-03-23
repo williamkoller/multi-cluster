@@ -118,7 +118,7 @@ export function PodsTable({
                     restartingPod ===
                     `${pod.cluster}-${pod.namespace}-${pod.name}`
                   }
-                  className='inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-800/50 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors'
+                  className='inline-flex items-center gap-1 rounded-md border border-[var(--color-status-danger-border)] px-2 py-1 text-xs font-medium text-[var(--color-status-danger-text)] hover:bg-[var(--color-status-danger-hover)] disabled:opacity-50 transition-colors'
                   title='Restart pod (delete and let controller recreate)'
                 >
                   {restartingPod ===

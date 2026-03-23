@@ -23,89 +23,66 @@ interface ApplicationCardProps {
 
 const healthConfig: Record<
   HealthStatus,
-  { color: string; icon: string; bg: string }
+  { color: string; icon: string; bg: string; ringColor: string }
 > = {
   Healthy: {
     color: 'text-[var(--color-health-green)]',
     bg: 'bg-[var(--color-health-green)]',
+    ringColor: 'ring-[var(--color-health-green)]',
     icon: '✓',
   },
   Progressing: {
     color: 'text-[var(--color-health-yellow)]',
     bg: 'bg-[var(--color-health-yellow)]',
+    ringColor: 'ring-[var(--color-health-yellow)]',
     icon: '↻',
   },
   Degraded: {
     color: 'text-[var(--color-health-red)]',
     bg: 'bg-[var(--color-health-red)]',
+    ringColor: 'ring-[var(--color-health-red)]',
     icon: '✗',
   },
   Suspended: {
     color: 'text-[var(--color-health-grey)]',
     bg: 'bg-[var(--color-health-grey)]',
+    ringColor: 'ring-[var(--color-health-grey)]',
     icon: '‖',
   },
   Missing: {
     color: 'text-[var(--color-health-grey)]',
     bg: 'bg-[var(--color-health-grey)]',
+    ringColor: 'ring-[var(--color-health-grey)]',
     icon: '?',
   },
   Unknown: {
     color: 'text-[var(--color-health-grey)]',
     bg: 'bg-[var(--color-health-grey)]',
+    ringColor: 'ring-[var(--color-health-grey)]',
     icon: '?',
   },
 };
 
-const syncConfig: Record<SyncStatus, { color: string; label: string }> = {
-  Synced: { color: 'text-[var(--color-health-green)]', label: 'Synced' },
-  OutOfSync: { color: 'text-[var(--color-health-yellow)]', label: 'OutOfSync' },
-  Unknown: { color: 'text-[var(--color-health-grey)]', label: 'Unknown' },
+const syncConfig: Record<
+  SyncStatus,
+  { color: string; label: string; icon: string }
+> = {
+  Synced: {
+    color: 'text-[var(--color-health-green)]',
+    label: 'Synced',
+    icon: '✓',
+  },
+  OutOfSync: {
+    color: 'text-[var(--color-sync-yellow)]',
+    label: 'OutOfSync',
+    icon: '⟳',
+  },
+  Unknown: {
+    color: 'text-[var(--color-health-grey)]',
+    label: 'Unknown',
+    icon: '?',
+  },
 };
-
-function HealthBadge({ health }: { health: HealthStatus }) {
-  const cfg = healthConfig[health] ?? healthConfig.Unknown;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs font-medium ${cfg.color}`}
-    >
-      <span className={`h-2 w-2 rounded-full ${cfg.bg}`} />
-      {health}
-    </span>
-  );
-}
-
-function SyncBadge({ sync }: { sync: SyncStatus }) {
-  const cfg = syncConfig[sync] ?? syncConfig.Unknown;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs font-medium ${cfg.color}`}
-    >
-      <svg
-        className='h-3 w-3'
-        fill='none'
-        viewBox='0 0 24 24'
-        strokeWidth='2'
-        stroke='currentColor'
-      >
-        {sync === 'Synced' ? (
-          <path
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            d='M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-          />
-        ) : (
-          <path
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            d='M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182'
-          />
-        )}
-      </svg>
-      {cfg.label}
-    </span>
-  );
-}
 
 function ResourceTree({
   app,
@@ -124,39 +101,56 @@ function ResourceTree({
     kindGroups[r.kind].push(r);
   }
 
+  const kindIcons: Record<string, string> = {
+    Deployment: '⎈',
+    Pod: '◉',
+    Service: '◈',
+    ReplicaSet: '⊞',
+  };
+
   return (
-    <div className='space-y-2'>
+    <div className='space-y-3'>
       {Object.entries(kindGroups).map(([kind, items]) => (
         <div key={kind}>
-          <p className='text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1'>
-            {kind} ({items.length})
-          </p>
-          <div className='space-y-1'>
+          <div className='flex items-center gap-1.5 mb-1.5'>
+            <span className='text-xs text-[var(--color-text-muted)]'>
+              {kindIcons[kind] ?? '○'}
+            </span>
+            <span className='text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]'>
+              {kind}
+            </span>
+            <span className='text-[10px] tabular-nums text-[var(--color-text-muted)]'>
+              ({items.length})
+            </span>
+          </div>
+          <div className='space-y-0.5 pl-4 border-l-2 border-[var(--color-border-subtle)]'>
             {items.slice(0, 12).map((r) => {
               const cfg = healthConfig[r.health] ?? healthConfig.Unknown;
               const podKey = `${app.cluster}-${r.namespace}-${r.name}`;
               return (
                 <div
                   key={`${r.kind}-${r.name}`}
-                  className='flex items-center justify-between rounded bg-[var(--color-surface-sunken)] border border-[var(--color-border-subtle)] px-2 py-1'
+                  className='group flex items-center justify-between rounded-md px-2.5 py-1.5 hover:bg-[var(--color-surface-inset)] transition-colors'
                 >
-                  <span className='inline-flex items-center gap-1.5 text-[10px] font-mono text-[var(--color-text-secondary)] min-w-0'>
+                  <div className='flex items-center gap-2 min-w-0'>
                     <span
                       className={`h-1.5 w-1.5 rounded-full shrink-0 ${cfg.bg}`}
                     />
-                    <span className='truncate'>{r.name}</span>
-                    <span className='text-[var(--color-text-muted)] shrink-0'>
+                    <span className='text-xs font-mono text-[var(--color-text-secondary)] truncate'>
+                      {r.name}
+                    </span>
+                    <span className={`text-[10px] shrink-0 ${cfg.color}`}>
                       {r.status}
                     </span>
-                  </span>
+                  </div>
                   {kind === 'Pod' && (
-                    <div className='flex items-center gap-1 shrink-0 ml-2'>
+                    <div className='flex items-center gap-0.5 shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity'>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onViewLogs(app.cluster, r.namespace, r.name);
                         }}
-                        className='rounded p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-colors'
+                        className='rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-colors'
                         title='View logs'
                       >
                         <svg
@@ -179,7 +173,7 @@ function ResourceTree({
                           onDeletePod(app.cluster, r.namespace, r.name);
                         }}
                         disabled={deletingPod === podKey}
-                        className='rounded p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-health-red)] hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors'
+                        className='rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-health-red)] hover:bg-[var(--color-health-red)]/5 disabled:opacity-50 transition-colors'
                         title='Restart pod'
                       >
                         {deletingPod === podKey ? (
@@ -224,9 +218,9 @@ function ResourceTree({
               );
             })}
             {items.length > 12 && (
-              <span className='text-[10px] text-[var(--color-text-muted)] px-2'>
+              <p className='text-[10px] text-[var(--color-text-muted)] px-2.5 py-1'>
                 +{items.length - 12} more
-              </span>
+              </p>
             )}
           </div>
         </div>
@@ -304,21 +298,52 @@ export function ApplicationCards({
 
   if (loading && apps.length === 0) {
     return (
-      <div className='flex items-center justify-center py-20 text-sm text-[var(--color-text-muted)]'>
-        Loading applications...
+      <div className='flex items-center justify-center py-24 text-sm text-[var(--color-text-muted)]'>
+        <svg
+          className='h-5 w-5 animate-spin mr-2'
+          viewBox='0 0 24 24'
+          fill='none'
+        >
+          <circle
+            className='opacity-25'
+            cx='12'
+            cy='12'
+            r='10'
+            stroke='currentColor'
+            strokeWidth='4'
+          />
+          <path
+            className='opacity-75'
+            fill='currentColor'
+            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'
+          />
+        </svg>
+        Loading applications…
       </div>
     );
   }
 
   if (apps.length === 0) {
     return (
-      <div className='flex items-center justify-center py-20 text-sm text-[var(--color-text-muted)]'>
-        No applications found
+      <div className='flex flex-col items-center justify-center py-24 text-[var(--color-text-muted)]'>
+        <svg
+          className='h-12 w-12 mb-3 opacity-30'
+          fill='none'
+          viewBox='0 0 24 24'
+          strokeWidth='1'
+          stroke='currentColor'
+        >
+          <path
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            d='M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125'
+          />
+        </svg>
+        <p className='text-sm'>No applications found</p>
       </div>
     );
   }
 
-  // Aggregated stats
   const stats = {
     total: apps.length,
     healthy: apps.filter((a) => a.health === 'Healthy').length,
@@ -331,193 +356,175 @@ export function ApplicationCards({
 
   return (
     <div className='space-y-6'>
-      {/* Summary bar */}
-      <div className='flex items-center gap-6 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-3'>
-        <div className='flex items-center gap-2'>
-          <span className='text-xl font-bold tabular-nums text-[var(--color-text-primary)]'>
-            {stats.total}
-          </span>
-          <span className='text-xs uppercase tracking-wider text-[var(--color-text-muted)]'>
-            Apps
-          </span>
-        </div>
-        <div className='h-6 w-px bg-[var(--color-border)]' />
-        <div className='flex items-center gap-4 text-xs'>
-          <span className='flex items-center gap-1.5'>
-            <span className='h-2 w-2 rounded-full bg-[var(--color-health-green)]' />
-            <span className='text-[var(--color-text-secondary)] tabular-nums'>
-              {stats.healthy} Healthy
-            </span>
-          </span>
-          <span className='flex items-center gap-1.5'>
-            <span className='h-2 w-2 rounded-full bg-[var(--color-health-yellow)]' />
-            <span className='text-[var(--color-text-secondary)] tabular-nums'>
-              {stats.progressing} Progressing
-            </span>
-          </span>
-          <span className='flex items-center gap-1.5'>
-            <span className='h-2 w-2 rounded-full bg-[var(--color-health-red)]' />
-            <span className='text-[var(--color-text-secondary)] tabular-nums'>
-              {stats.degraded} Degraded
-            </span>
-          </span>
-          {stats.suspended > 0 && (
-            <span className='flex items-center gap-1.5'>
-              <span className='h-2 w-2 rounded-full bg-[var(--color-health-grey)]' />
-              <span className='text-[var(--color-text-secondary)] tabular-nums'>
-                {stats.suspended} Suspended
-              </span>
-            </span>
-          )}
-        </div>
-        <div className='h-6 w-px bg-[var(--color-border)]' />
-        <div className='flex items-center gap-4 text-xs'>
-          <span className='flex items-center gap-1.5'>
-            <svg
-              className='h-3 w-3 text-[var(--color-health-green)]'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth='2'
-              stroke='currentColor'
+      {/* Status bar */}
+      <div className='flex items-center gap-2 flex-wrap'>
+        <span className='inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)]'>
+          {stats.total} Applications
+        </span>
+        {[
+          {
+            count: stats.healthy,
+            label: 'Healthy',
+            color: 'var(--color-health-green)',
+          },
+          {
+            count: stats.progressing,
+            label: 'Progressing',
+            color: 'var(--color-health-yellow)',
+          },
+          {
+            count: stats.degraded,
+            label: 'Degraded',
+            color: 'var(--color-health-red)',
+          },
+          {
+            count: stats.suspended,
+            label: 'Suspended',
+            color: 'var(--color-health-grey)',
+          },
+        ]
+          .filter((s) => s.count > 0)
+          .map((s) => (
+            <span
+              key={s.label}
+              className='inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs text-[var(--color-text-secondary)]'
             >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+              <span
+                className='h-2 w-2 rounded-full'
+                style={{ backgroundColor: s.color }}
               />
-            </svg>
-            <span className='text-[var(--color-text-secondary)] tabular-nums'>
-              {stats.synced} Synced
+              {s.count} {s.label}
             </span>
-          </span>
-          <span className='flex items-center gap-1.5'>
-            <svg
-              className='h-3 w-3 text-[var(--color-health-yellow)]'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth='2'
-              stroke='currentColor'
+          ))}
+        <span className='w-px h-5 bg-[var(--color-border)] mx-1' />
+        {[
+          {
+            count: stats.synced,
+            label: 'Synced',
+            color: 'var(--color-health-green)',
+          },
+          {
+            count: stats.outOfSync,
+            label: 'OutOfSync',
+            color: 'var(--color-sync-yellow)',
+          },
+        ]
+          .filter((s) => s.count > 0)
+          .map((s) => (
+            <span
+              key={s.label}
+              className='inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs text-[var(--color-text-secondary)]'
             >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182'
+              <span
+                className='h-2 w-2 rounded-full'
+                style={{ backgroundColor: s.color }}
               />
-            </svg>
-            <span className='text-[var(--color-text-secondary)] tabular-nums'>
-              {stats.outOfSync} OutOfSync
+              {s.count} {s.label}
             </span>
-          </span>
-        </div>
+          ))}
       </div>
 
-      {/* Application cards grid */}
-      <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+      {/* Cards grid */}
+      <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
         {apps.map((app) => {
           const key = `${app.cluster}-${app.namespace}-${app.name}`;
           const isExpanded = expanded.has(key);
           const hCfg = healthConfig[app.health] ?? healthConfig.Unknown;
+          const sCfg = syncConfig[app.syncStatus] ?? syncConfig.Unknown;
 
           return (
             <div
               key={key}
-              className={`rounded-lg border bg-[var(--color-surface)] overflow-hidden transition-all ${
-                app.health === 'Healthy'
-                  ? 'border-[var(--color-border)]'
-                  : app.health === 'Degraded'
-                    ? 'border-[var(--color-health-red)]/40'
-                    : app.health === 'Progressing'
-                      ? 'border-[var(--color-health-yellow)]/40'
-                      : 'border-[var(--color-border)]'
-              }`}
+              className='rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden'
             >
-              {/* Top status bar */}
-              <div className={`h-1 ${hCfg.bg}`} />
+              {/* Health indicator bar */}
+              <div className={`h-0.5 ${hCfg.bg}`} />
 
-              {/* Card body */}
-              <div className='p-4 space-y-3'>
-                {/* Header row */}
-                <div className='flex items-start justify-between'>
-                  <div className='min-w-0 flex-1'>
+              <div className='p-5 space-y-4'>
+                {/* Header */}
+                <div className='flex items-start justify-between gap-2'>
+                  <div className='min-w-0'>
                     <h3
-                      className='text-sm font-semibold font-mono text-[var(--color-text-primary)] truncate'
+                      className='text-sm font-semibold text-[var(--color-text-primary)] truncate'
                       title={app.name}
                     >
                       {app.name}
                     </h3>
-                    <p className='text-[10px] text-[var(--color-text-muted)] mt-0.5'>
-                      {app.cluster} / {app.namespace}
+                    <p className='text-[11px] text-[var(--color-text-muted)] mt-0.5'>
+                      {app.cluster}
+                      <span className='mx-1 opacity-40'>/</span>
+                      {app.namespace}
                     </p>
                   </div>
-                  <span className='text-[10px] text-[var(--color-text-muted)] shrink-0 ml-2'>
+                  <span className='text-[10px] text-[var(--color-text-muted)] shrink-0 tabular-nums'>
                     {app.age}
                   </span>
                 </div>
 
-                {/* Health + Sync row */}
-                <div className='flex items-center gap-4'>
-                  <HealthBadge health={app.health} />
-                  <SyncBadge sync={app.syncStatus} />
-                </div>
-
-                {/* Target vs Live state */}
-                <div className='grid grid-cols-2 gap-3'>
-                  <div className='rounded bg-[var(--color-surface-sunken)] p-2'>
-                    <p className='text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1'>
-                      Target State
-                    </p>
-                    <p className='text-xs tabular-nums text-[var(--color-text-primary)]'>
-                      {app.targetState.replicas} replicas
-                    </p>
-                  </div>
-                  <div className='rounded bg-[var(--color-surface-sunken)] p-2'>
-                    <p className='text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1'>
-                      Live State
-                    </p>
-                    <p className='text-xs tabular-nums text-[var(--color-text-primary)]'>
-                      {app.liveState.availableReplicas}/
-                      {app.targetState.replicas} available
-                    </p>
-                    <div className='flex gap-2 mt-0.5'>
-                      {app.liveState.runningPods > 0 && (
-                        <span className='text-[10px] text-[var(--color-health-green)] tabular-nums'>
-                          {app.liveState.runningPods} running
-                        </span>
-                      )}
-                      {app.liveState.pendingPods > 0 && (
-                        <span className='text-[10px] text-[var(--color-health-yellow)] tabular-nums'>
-                          {app.liveState.pendingPods} pending
-                        </span>
-                      )}
-                      {app.liveState.failedPods > 0 && (
-                        <span className='text-[10px] text-[var(--color-health-red)] tabular-nums'>
-                          {app.liveState.failedPods} failed
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Source badge */}
+                {/* Status pills */}
                 <div className='flex items-center gap-2'>
-                  <span className='inline-flex items-center rounded bg-[var(--color-accent-subtle)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-accent)]'>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium ${hCfg.bg}/10 ${hCfg.color}`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${hCfg.bg}`} />
+                    {app.health}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[10px] font-medium ${sCfg.color}`}
+                  >
+                    {sCfg.icon} {sCfg.label}
+                  </span>
+                  <span className='inline-flex items-center rounded-full bg-[var(--color-accent-subtle)] px-2 py-1 text-[10px] font-medium text-[var(--color-accent)]'>
                     {app.source}
                   </span>
-                  <span className='text-[10px] text-[var(--color-text-muted)]'>
-                    {app.resources.length} resources
-                  </span>
                 </div>
 
-                {/* Action buttons — ArgoCD-style */}
-                <div className='flex items-center gap-1.5 pt-1'>
+                {/* Replica status */}
+                <div className='flex items-center gap-4'>
+                  <div className='flex-1'>
+                    <div className='flex items-center justify-between mb-1'>
+                      <span className='text-[10px] text-[var(--color-text-muted)]'>
+                        Replicas
+                      </span>
+                      <span className='text-[10px] tabular-nums text-[var(--color-text-secondary)]'>
+                        {app.liveState.availableReplicas}/
+                        {app.targetState.replicas}
+                      </span>
+                    </div>
+                    <div className='h-1.5 rounded-full bg-[var(--color-border)] overflow-hidden'>
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${hCfg.bg}`}
+                        style={{
+                          width: `${app.targetState.replicas > 0 ? (app.liveState.availableReplicas / app.targetState.replicas) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-2 text-[10px] tabular-nums'>
+                    {app.liveState.runningPods > 0 && (
+                      <span className='text-[var(--color-health-green)]'>
+                        {app.liveState.runningPods}↑
+                      </span>
+                    )}
+                    {app.liveState.pendingPods > 0 && (
+                      <span className='text-[var(--color-health-yellow)]'>
+                        {app.liveState.pendingPods}◷
+                      </span>
+                    )}
+                    {app.liveState.failedPods > 0 && (
+                      <span className='text-[var(--color-health-red)]'>
+                        {app.liveState.failedPods}✗
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className='flex items-center gap-1.5 pt-1 border-t border-[var(--color-border-subtle)]'>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSync(app);
-                    }}
+                    onClick={() => handleSync(app)}
                     disabled={syncingKey === key}
-                    className='inline-flex items-center gap-1 rounded-md bg-[var(--color-accent)] px-2.5 py-1 text-[10px] font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors'
-                    title='Sync — Rollout restart to reconcile'
+                    className='inline-flex items-center gap-1 rounded bg-[var(--color-accent)] px-2.5 py-1.5 text-[10px] font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors'
                   >
                     {syncingKey === key ? (
                       <svg
@@ -557,58 +564,24 @@ export function ApplicationCards({
                     Sync
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRefresh();
-                    }}
-                    className='inline-flex items-center gap-1 rounded-md border border-[var(--color-border)] px-2.5 py-1 text-[10px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'
-                    title='Refresh — Re-fetch application state'
+                    onClick={() => onRefresh()}
+                    className='inline-flex items-center gap-1 rounded border border-[var(--color-border)] px-2.5 py-1.5 text-[10px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'
                   >
-                    <svg
-                      className='h-3 w-3'
-                      fill='none'
-                      viewBox='0 0 24 24'
-                      strokeWidth='2'
-                      stroke='currentColor'
-                    >
-                      <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        d='M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182'
-                      />
-                    </svg>
                     Refresh
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openScaleDialog(app);
-                    }}
-                    className='inline-flex items-center gap-1 rounded-md border border-[var(--color-border)] px-2.5 py-1 text-[10px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'
-                    title='Scale — Change replica count'
+                    onClick={() => openScaleDialog(app)}
+                    className='inline-flex items-center gap-1 rounded border border-[var(--color-border)] px-2.5 py-1.5 text-[10px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'
                   >
-                    <svg
-                      className='h-3 w-3'
-                      fill='none'
-                      viewBox='0 0 24 24'
-                      strokeWidth='2'
-                      stroke='currentColor'
-                    >
-                      <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        d='M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5-6L16.5 21m0 0L12 16.5m4.5 4.5V7.5'
-                      />
-                    </svg>
                     Scale
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleExpanded(key);
-                    }}
-                    className='inline-flex items-center gap-1 rounded-md border border-[var(--color-border)] px-2.5 py-1 text-[10px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'
-                    title='Details — Show resource tree'
+                    onClick={() => toggleExpanded(key)}
+                    className={`ml-auto inline-flex items-center gap-1 rounded border border-[var(--color-border)] px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
+                      isExpanded
+                        ? 'bg-[var(--color-accent-subtle)] text-[var(--color-accent)] border-[var(--color-accent)]/30'
+                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)]'
+                    }`}
                   >
                     <svg
                       className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
@@ -623,13 +596,13 @@ export function ApplicationCards({
                         d='M8.25 4.5l7.5 7.5-7.5 7.5'
                       />
                     </svg>
-                    Details
+                    {app.resources.length} Resources
                   </button>
                 </div>
 
-                {/* Expandable resource tree */}
+                {/* Resource tree */}
                 {isExpanded && (
-                  <div className='border-t border-[var(--color-border-subtle)] pt-3 mt-1'>
+                  <div className='pt-3 mt-1'>
                     <ResourceTree
                       app={app}
                       onDeletePod={handleDeletePod}
@@ -652,17 +625,22 @@ export function ApplicationCards({
         }}
       >
         <Dialog.Portal>
-          <Dialog.Overlay className='fixed inset-0 bg-black/50 z-50' />
-          <Dialog.Content className='fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-xl'>
-            <Dialog.Title className='text-sm font-semibold text-[var(--color-text-primary)]'>
-              Scale {scaleTarget?.name}
-            </Dialog.Title>
-            <Dialog.Description className='text-xs text-[var(--color-text-muted)] mt-1'>
-              {scaleTarget?.cluster} / {scaleTarget?.namespace}
-            </Dialog.Description>
-            <div className='mt-4 space-y-3'>
-              <label className='block text-xs text-[var(--color-text-secondary)]'>
-                Replicas
+          <Dialog.Overlay className='fixed inset-0 bg-[var(--color-overlay)] backdrop-blur-sm z-50' />
+          <Dialog.Content className='fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl'>
+            <div className='p-5 space-y-4'>
+              <div>
+                <Dialog.Title className='text-sm font-semibold text-[var(--color-text-primary)]'>
+                  Scale Application
+                </Dialog.Title>
+                <Dialog.Description className='text-xs text-[var(--color-text-muted)] mt-1'>
+                  {scaleTarget?.name} — {scaleTarget?.cluster}/
+                  {scaleTarget?.namespace}
+                </Dialog.Description>
+              </div>
+              <label className='block'>
+                <span className='text-xs font-medium text-[var(--color-text-secondary)]'>
+                  Replica Count
+                </span>
                 <input
                   type='number'
                   min={0}
@@ -673,21 +651,21 @@ export function ApplicationCards({
                       Math.max(0, Math.min(100, Number(e.target.value))),
                     )
                   }
-                  className='mt-1 block w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]'
+                  className='mt-1.5 block w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm tabular-nums text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]'
                 />
               </label>
-              <div className='flex justify-end gap-2'>
+              <div className='flex justify-end gap-2 pt-2'>
                 <Dialog.Close asChild>
-                  <button className='rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'>
+                  <button className='rounded border border-[var(--color-border)] px-4 py-2 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'>
                     Cancel
                   </button>
                 </Dialog.Close>
                 <button
                   onClick={handleScale}
                   disabled={!!scalingKey}
-                  className='rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors'
+                  className='rounded bg-[var(--color-accent)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors'
                 >
-                  {scalingKey ? 'Scaling…' : 'Scale'}
+                  {scalingKey ? 'Scaling…' : 'Apply'}
                 </button>
               </div>
             </div>

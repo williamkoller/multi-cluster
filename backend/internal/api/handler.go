@@ -20,10 +20,10 @@ type Handler struct {
 	cache   *cache.Cache
 }
 
-func NewHandler(manager *kubernetes.MultiClusterManager) *Handler {
+func NewHandler(manager *kubernetes.MultiClusterManager, c *cache.Cache) *Handler {
 	return &Handler{
 		manager: manager,
-		cache:   cache.New(5 * time.Second),
+		cache:   c,
 	}
 }
 
@@ -43,8 +43,9 @@ func cacheKey(parts ...string) string {
 
 // cachedList is a generic helper that checks the cache before fetching from the k8s API.
 func cachedList[T any](h *Handler, ctx context.Context, key string, fetch func() ([]T, error)) ([]T, error) {
-	if v, ok := h.cache.Get(key); ok {
-		return v.([]T), nil
+	var cached []T
+	if h.cache.GetJSON(key, &cached) {
+		return cached, nil
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func cachedList[T any](h *Handler, ctx context.Context, key string, fetch func()
 	if err != nil {
 		return nil, err
 	}
-	h.cache.Set(key, data)
+	h.cache.SetJSON(key, data)
 	return data, nil
 }
 
@@ -328,8 +329,9 @@ func (h *Handler) ListNamespaces(c *gin.Context) {
 	defer cancel()
 
 	key := cacheKey("namespaces", "all")
-	if v, ok := h.cache.Get(key); ok {
-		c.JSON(http.StatusOK, v)
+	var cached map[string][]string
+	if h.cache.GetJSON(key, &cached) {
+		c.JSON(http.StatusOK, cached)
 		return
 	}
 
@@ -339,7 +341,7 @@ func (h *Handler) ListNamespaces(c *gin.Context) {
 		return
 	}
 
-	h.cache.Set(key, namespaces)
+	h.cache.SetJSON(key, namespaces)
 	c.JSON(http.StatusOK, namespaces)
 }
 
@@ -486,8 +488,9 @@ func (h *Handler) Summary(c *gin.Context) {
 	defer cancel()
 
 	key := cacheKey("summary", "all")
-	if v, ok := h.cache.Get(key); ok {
-		c.JSON(http.StatusOK, v)
+	var cached model.SummaryResponse
+	if h.cache.GetJSON(key, &cached) {
+		c.JSON(http.StatusOK, cached)
 		return
 	}
 
@@ -498,7 +501,7 @@ func (h *Handler) Summary(c *gin.Context) {
 	}
 
 	resp := model.SummaryResponse{Clusters: summaries}
-	h.cache.Set(key, resp)
+	h.cache.SetJSON(key, resp)
 	c.JSON(http.StatusOK, resp)
 }
 

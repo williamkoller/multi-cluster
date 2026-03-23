@@ -468,39 +468,33 @@ function App() {
 
   const pag = currentPagination();
 
-  const selectClass =
-    'h-9 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] focus:outline-none transition-colors';
-
   return (
     <div className='min-h-screen bg-[var(--color-surface-sunken)] text-[var(--color-text-primary)] transition-colors'>
-      <header className='border-b border-[var(--color-border)] bg-[var(--color-surface)]'>
-        <div className='mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8'>
-          <div className='flex h-14 items-center justify-between'>
+      {/* ArgoCD-style dark header */}
+      <header className='bg-[var(--color-header-bg)] border-b border-[var(--color-header-border)] shadow-sm'>
+        <div className='mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8'>
+          <div className='flex h-12 items-center justify-between'>
+            {/* Logo + Title */}
             <div className='flex items-center gap-3'>
-              <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent)] text-white'>
-                <svg
-                  className='h-4 w-4'
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  strokeWidth='2'
-                  stroke='currentColor'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    d='M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9'
-                  />
-                </svg>
-              </div>
-              <div>
-                <h1 className='text-sm font-semibold text-[var(--color-text-primary)] leading-tight'>
-                  Multi-Cluster
-                </h1>
-                <p className='text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]'>
-                  Dashboard
-                </p>
-              </div>
+              <svg
+                className='h-7 w-7 text-[var(--color-accent)]'
+                fill='none'
+                viewBox='0 0 24 24'
+                strokeWidth='1.5'
+                stroke='currentColor'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  d='M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9'
+                />
+              </svg>
+              <span className='text-sm font-semibold tracking-wide text-[var(--color-header-text-bright)]'>
+                Multi-Cluster Dashboard
+              </span>
             </div>
+
+            {/* Right controls */}
             <div className='flex items-center gap-2'>
               <ClusterSelector
                 clusters={clusters}
@@ -510,7 +504,7 @@ function App() {
               <select
                 value={namespace}
                 onChange={(e) => setNamespace(e.target.value)}
-                className={selectClass}
+                className='h-8 rounded border border-[var(--color-header-control-border)] bg-[var(--color-header-control-bg)] px-2.5 text-xs text-[var(--color-header-text)] focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] focus:outline-none transition-colors'
               >
                 <option value=''>All Namespaces</option>
                 {allNamespaces.map((ns) => (
@@ -522,17 +516,17 @@ function App() {
               <select
                 value={autoRefresh}
                 onChange={(e) => setAutoRefresh(Number(e.target.value))}
-                className={selectClass}
+                className='h-8 rounded border border-[var(--color-header-control-border)] bg-[var(--color-header-control-bg)] px-2.5 text-xs text-[var(--color-header-text)] focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] focus:outline-none transition-colors'
               >
-                <option value={0}>No auto-refresh</option>
-                <option value={5}>Every 5s</option>
-                <option value={10}>Every 10s</option>
-                <option value={30}>Every 30s</option>
-                <option value={60}>Every 60s</option>
+                <option value={0}>Manual</option>
+                <option value={5}>5s</option>
+                <option value={10}>10s</option>
+                <option value={30}>30s</option>
+                <option value={60}>60s</option>
               </select>
               <button
                 onClick={() => setDarkMode((d) => !d)}
-                className='flex h-9 w-9 items-center justify-center rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-text-secondary)] transition-colors'
+                className='flex h-8 w-8 items-center justify-center rounded text-[var(--color-header-text)] hover:text-[var(--color-header-text-bright)] hover:bg-[var(--color-header-control-hover)] transition-colors'
                 title='Toggle dark mode'
               >
                 {darkMode ? (
@@ -568,7 +562,7 @@ function App() {
               <button
                 onClick={fetchData}
                 disabled={loading}
-                className='inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors'
+                className='inline-flex h-8 items-center gap-1.5 rounded bg-[var(--color-accent)] px-3 text-xs font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors'
               >
                 {loading ? (
                   <svg
@@ -605,63 +599,67 @@ function App() {
                     />
                   </svg>
                 )}
-                Refresh
+                Sync
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className='mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8'>
-        {/* Tabs */}
-        <Tabs.Root value={tab} onValueChange={(v) => setTab(v as Tab)}>
-          <div className='flex items-center justify-between mb-6'>
-            <Tabs.List className='flex gap-1 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] p-1'>
-              {TABS.map((t) => (
-                <Tabs.Trigger
-                  key={t.key}
-                  value={t.key}
-                  className='px-3.5 py-1.5 text-xs font-medium uppercase tracking-wider rounded-md transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] data-[state=active]:bg-[var(--color-accent)] data-[state=active]:text-white outline-none'
-                >
-                  {t.label}
-                </Tabs.Trigger>
-              ))}
-            </Tabs.List>
-
-            {tab !== 'overview' && tab !== 'applications' && (
-              <div className='flex items-center gap-2'>
-                <div className='w-56'>
-                  <SearchBar
-                    value={search}
-                    onChange={setSearch}
-                    placeholder={`Search ${tab}...`}
-                  />
-                </div>
-                <button
-                  onClick={handleExport}
-                  className='inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] transition-colors'
-                >
-                  <svg
-                    className='h-3.5 w-3.5'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    strokeWidth='2'
-                    stroke='currentColor'
+      <Tabs.Root value={tab} onValueChange={(v) => setTab(v as Tab)}>
+        {/* Navigation bar */}
+        <nav className='border-b border-[var(--color-border)] bg-[var(--color-surface)]'>
+          <div className='mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8'>
+            <div className='flex items-center justify-between'>
+              <Tabs.List className='flex -mb-px'>
+                {TABS.map((t) => (
+                  <Tabs.Trigger
+                    key={t.key}
+                    value={t.key}
+                    className='px-4 py-3 text-xs font-medium tracking-wide border-b-2 transition-colors text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border)] data-[state=active]:text-[var(--color-accent)] data-[state=active]:border-[var(--color-accent)] outline-none'
                   >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
-                    />
-                  </svg>
-                  CSV
-                </button>
-              </div>
-            )}
-          </div>
+                    {t.label}
+                  </Tabs.Trigger>
+                ))}
+              </Tabs.List>
 
-          {error && (
-            <div className='mt-4 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-3 text-sm text-red-600 dark:text-red-400 flex items-center gap-2'>
+              {tab !== 'overview' && tab !== 'applications' && (
+                <div className='flex items-center gap-2'>
+                  <div className='w-52'>
+                    <SearchBar
+                      value={search}
+                      onChange={setSearch}
+                      placeholder={`Search ${tab}...`}
+                    />
+                  </div>
+                  <button
+                    onClick={handleExport}
+                    className='inline-flex h-7 items-center gap-1 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[10px] font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-text-secondary)] transition-colors'
+                  >
+                    <svg
+                      className='h-3 w-3'
+                      fill='none'
+                      viewBox='0 0 24 24'
+                      strokeWidth='2'
+                      stroke='currentColor'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
+                      />
+                    </svg>
+                    Export
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </nav>
+
+        {error && (
+          <div className='mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 mt-4'>
+            <div className='rounded-lg border border-[var(--color-health-red)]/20 bg-[var(--color-health-red)]/5 p-3 text-xs text-[var(--color-health-red)] flex items-center gap-2'>
               <svg
                 className='h-4 w-4 shrink-0'
                 viewBox='0 0 20 20'
@@ -675,99 +673,99 @@ function App() {
               </svg>
               {error}
             </div>
-          )}
-
-          <div className='mt-4'>
-            <Tabs.Content
-              value='overview'
-              forceMount
-              className={tab !== 'overview' ? 'hidden' : ''}
-            >
-              <OverviewCards clusters={summary} loading={loading} />
-            </Tabs.Content>
-            <Tabs.Content
-              value='applications'
-              forceMount
-              className={tab !== 'applications' ? 'hidden' : ''}
-            >
-              <ApplicationCards
-                apps={filteredApps}
-                loading={loading}
-                onSync={handleRolloutRestart}
-                onScale={handleScale}
-                onRefresh={fetchData}
-                onDeletePod={handleRestart}
-                onViewLogs={handleViewLogs}
-              />
-            </Tabs.Content>
-            <Tabs.Content
-              value='pods'
-              forceMount
-              className={tab !== 'pods' ? 'hidden' : ''}
-            >
-              <PodsTable
-                pods={filteredPods}
-                loading={loading}
-                onRestart={handleRestart}
-                onViewLogs={handleViewLogs}
-              />
-            </Tabs.Content>
-            <Tabs.Content
-              value='services'
-              forceMount
-              className={tab !== 'services' ? 'hidden' : ''}
-            >
-              <ServicesTable services={filteredServices} loading={loading} />
-            </Tabs.Content>
-            <Tabs.Content
-              value='deployments'
-              forceMount
-              className={tab !== 'deployments' ? 'hidden' : ''}
-            >
-              <DeploymentsTable
-                deployments={filteredDeployments}
-                loading={loading}
-                onScale={handleScale}
-                onRolloutRestart={handleRolloutRestart}
-              />
-            </Tabs.Content>
-            <Tabs.Content
-              value='nodes'
-              forceMount
-              className={tab !== 'nodes' ? 'hidden' : ''}
-            >
-              <NodesTable nodes={filteredNodes} loading={loading} />
-            </Tabs.Content>
-            <Tabs.Content
-              value='events'
-              forceMount
-              className={tab !== 'events' ? 'hidden' : ''}
-            >
-              <EventsTable events={filteredEvents} loading={loading} />
-            </Tabs.Content>
-            <Tabs.Content
-              value='ingresses'
-              forceMount
-              className={tab !== 'ingresses' ? 'hidden' : ''}
-            >
-              <IngressesTable ingresses={filteredIngresses} loading={loading} />
-            </Tabs.Content>
-            {tab !== 'overview' && tab !== 'applications' && (
-              <Pagination
-                page={pag?.page || 1}
-                totalPages={pag?.totalPages || 1}
-                total={pag?.total || 0}
-                pageSize={pag?.pageSize || 50}
-                onPageChange={setPage}
-                onPageSizeChange={(size) => {
-                  setPageSize(size);
-                  setPage(1);
-                }}
-              />
-            )}
           </div>
-        </Tabs.Root>
-      </main>
+        )}
+
+        <main className='mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8'>
+          <Tabs.Content
+            value='overview'
+            forceMount
+            className={tab !== 'overview' ? 'hidden' : ''}
+          >
+            <OverviewCards clusters={summary} loading={loading} />
+          </Tabs.Content>
+          <Tabs.Content
+            value='applications'
+            forceMount
+            className={tab !== 'applications' ? 'hidden' : ''}
+          >
+            <ApplicationCards
+              apps={filteredApps}
+              loading={loading}
+              onSync={handleRolloutRestart}
+              onScale={handleScale}
+              onRefresh={fetchData}
+              onDeletePod={handleRestart}
+              onViewLogs={handleViewLogs}
+            />
+          </Tabs.Content>
+          <Tabs.Content
+            value='pods'
+            forceMount
+            className={tab !== 'pods' ? 'hidden' : ''}
+          >
+            <PodsTable
+              pods={filteredPods}
+              loading={loading}
+              onRestart={handleRestart}
+              onViewLogs={handleViewLogs}
+            />
+          </Tabs.Content>
+          <Tabs.Content
+            value='services'
+            forceMount
+            className={tab !== 'services' ? 'hidden' : ''}
+          >
+            <ServicesTable services={filteredServices} loading={loading} />
+          </Tabs.Content>
+          <Tabs.Content
+            value='deployments'
+            forceMount
+            className={tab !== 'deployments' ? 'hidden' : ''}
+          >
+            <DeploymentsTable
+              deployments={filteredDeployments}
+              loading={loading}
+              onScale={handleScale}
+              onRolloutRestart={handleRolloutRestart}
+            />
+          </Tabs.Content>
+          <Tabs.Content
+            value='nodes'
+            forceMount
+            className={tab !== 'nodes' ? 'hidden' : ''}
+          >
+            <NodesTable nodes={filteredNodes} loading={loading} />
+          </Tabs.Content>
+          <Tabs.Content
+            value='events'
+            forceMount
+            className={tab !== 'events' ? 'hidden' : ''}
+          >
+            <EventsTable events={filteredEvents} loading={loading} />
+          </Tabs.Content>
+          <Tabs.Content
+            value='ingresses'
+            forceMount
+            className={tab !== 'ingresses' ? 'hidden' : ''}
+          >
+            <IngressesTable ingresses={filteredIngresses} loading={loading} />
+          </Tabs.Content>
+          {tab !== 'overview' && tab !== 'applications' && (
+            <Pagination
+              page={pag?.page || 1}
+              totalPages={pag?.totalPages || 1}
+              total={pag?.total || 0}
+              pageSize={pag?.pageSize || 50}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          )}
+        </main>
+      </Tabs.Root>
 
       {logsTarget && (
         <PodLogsViewer

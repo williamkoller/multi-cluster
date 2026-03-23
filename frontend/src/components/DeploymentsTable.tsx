@@ -143,8 +143,8 @@ export function DeploymentsTable({
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         deploy.available === deploy.replicas
-                          ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400'
-                          : 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400'
+                          ? 'bg-[var(--color-status-success-bg)] text-[var(--color-status-success-text)]'
+                          : 'bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning-text)]'
                       }`}
                     >
                       {deploy.available}/{deploy.replicas}
@@ -199,7 +199,7 @@ export function DeploymentsTable({
                     <button
                       onClick={() => handleRolloutRestart(deploy)}
                       disabled={restartingKey === key}
-                      className='ml-2 inline-flex items-center gap-1 rounded-md border border-orange-200 dark:border-orange-800/50 px-2 py-1 text-xs font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 disabled:opacity-50 transition-colors'
+                      className='ml-2 inline-flex items-center gap-1 rounded-md border border-[var(--color-status-orange-border)] px-2 py-1 text-xs font-medium text-[var(--color-status-orange-text)] hover:bg-[var(--color-status-orange-hover)] disabled:opacity-50 transition-colors'
                       title='Rollout restart deployment'
                     >
                       {restartingKey === key ? (
@@ -254,7 +254,7 @@ export function DeploymentsTable({
         }}
       >
         <Dialog.Portal>
-          <Dialog.Overlay className='fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-[fadeIn_0.15s_ease-out]' />
+          <Dialog.Overlay className='fixed inset-0 z-50 bg-[var(--color-overlay)] data-[state=open]:animate-[fadeIn_0.15s_ease-out]' />
           <Dialog.Content className='fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6 data-[state=open]:animate-[slideIn_0.15s_ease-out]'>
             <Dialog.Title className='text-lg font-semibold text-[var(--color-text-primary)]'>
               Scale Deployment

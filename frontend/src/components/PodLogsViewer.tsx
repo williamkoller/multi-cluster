@@ -118,7 +118,7 @@ export function PodLogsViewer({
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className='fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-[fadeIn_0.15s_ease-out]' />
+        <Dialog.Overlay className='fixed inset-0 z-50 bg-[var(--color-overlay)] data-[state=open]:animate-[fadeIn_0.15s_ease-out]' />
         <Dialog.Content className='fixed inset-0 z-50 flex items-center justify-center p-4'>
           <div className='flex h-[80vh] w-full max-w-4xl flex-col rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] data-[state=open]:animate-[slideIn_0.15s_ease-out]'>
             <div className='flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3'>
@@ -184,7 +184,7 @@ export function PodLogsViewer({
             <div
               ref={containerRef}
               onScroll={handleScroll}
-              className='log-scroll flex-1 overflow-y-auto overflow-x-hidden bg-gray-950 dark:bg-black px-4 py-3'
+              className='log-scroll flex-1 overflow-y-auto overflow-x-hidden bg-[var(--color-log-bg)] px-4 py-3'
             >
               {error ? (
                 <p className='text-red-400 text-sm'>{error}</p>
